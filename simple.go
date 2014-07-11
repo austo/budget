@@ -2,23 +2,26 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
 	"log"
+	"os"
+	"time"
 )
 
-// type BudgetItem struct {
-// 	ItemId           int
-// 	AccountId        int
-// 	FiscalYearId     int
-// 	AccountName      int
-// 	ItemDate         int
-// 	Counterparty     string
-// 	ItemDescription  string
-// 	Amount           float64
-// 	RemainingBalance float64
-// }
+type BudgetItem struct {
+	ItemId           int
+	AccountId        int
+	FiscalYearId     int
+	AccountName      string
+	ItemDate         time.Time
+	CounterParty     string
+	ItemDescription  string
+	Amount           float64
+	RemainingBalance float64
+}
 
 var debug = flag.Bool("debug", false, "enable debugging")
 var password = flag.String("password", "", "the database password")
@@ -26,6 +29,27 @@ var port *int = flag.Int("port", 1433, "the database port")
 var server = flag.String("server", "", "the database server")
 var user = flag.String("user", "", "the database user")
 var dbname = flag.String("dbname", "", "budget database")
+
+func getBudgetItem(rows *sql.Rows, acctId int, fiscalYearId int) (item BudgetItem, err error) {
+	var itemId int
+	var itemDate time.Time
+	var counterparty string
+	var itemDescription string
+	var amount float64
+	var remainingBal float64
+	err = rows.Scan(&itemId, &itemDate, &counterparty, &itemDescription, &amount, &remainingBal)
+	item = BudgetItem{
+		ItemId:           itemId,
+		AccountId:        acctId,
+		FiscalYearId:     fiscalYearId,
+		ItemDate:         itemDate,
+		CounterParty:     counterparty,
+		ItemDescription:  itemDescription,
+		Amount:           amount,
+		RemainingBalance: remainingBal,
+	}
+	return
+}
 
 func main() {
 	flag.Parse() // parse the command line args
@@ -48,17 +72,12 @@ func main() {
 	}
 	defer conn.Close()
 
-	// stmt, err := conn.Prepare("select 1, 'abc'")
-	// if err != nil {
-	// 	log.Fatal("Prepare failed:", err.Error())
-	// }
-
-	stmt, err := conn.Prepare("CALL GetBudgetItemsByFiscalYear(?,?)")
+	stmt, err := conn.Prepare("exec GetBudgetItemsByFiscalYear @accountId = ?, @fiscalYearId = ?")
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		log.Fatal("error calling GetBudgetItemsByFiscalYear")
 	}
-	fmt.Print("statement: %+v\n", stmt)
+	// fmt.Print("statement: %+v\n", stmt)
 	defer stmt.Close()
 
 	rows, err := stmt.Query(30, 1)
@@ -67,21 +86,20 @@ func main() {
 		log.Fatal("error fetching rows from GetBudgetItemsByFiscalYear")
 	}
 
-	var id int
+	items := make([]BudgetItem, 0)
+
 	for rows.Next() {
-		err = rows.Scan(&id)
-		fmt.Printf("id: %d\n", id)
+		// columnNames, _ := rows.Columns()
+		// fmt.Println(columnNames)
+		item, _ := getBudgetItem(rows, 30, 1)
+		items = append(items, item)
 	}
 
-	// var somenumber int64
-	// var somechars string
-	// err = row.Scan(&somenumber, &somechars)
-	// if err != nil {
-	// 	log.Fatal("Scan failed:", err.Error())
-	// }
-	// fmt.Printf("somenumber:%d\n", somenumber)
-	// fmt.Printf("somechars:%s\n", somechars)
+	enc := json.NewEncoder(os.Stdout)
+	if err = enc.Encode(&items); err != nil {
+		log.Fatal(err)
+	}
 
-	fmt.Printf("bye\n")
+	// fmt.Println(items)
 
 }
