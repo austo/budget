@@ -23,10 +23,12 @@ type BudgetItem struct {
 	RemainingBalance float64
 }
 
-// TODO: produce map of statements from map of const strings
-const (
-	getBudgetItemsByFiscalYear = "exec GetBudgetItemsByFiscalYear @accountId = ?, @fiscalYearId = ?"
-)
+var storedProcedures map[string]string = map[string]string{
+	"getBudgetItemsByFiscalYear": "exec GetBudgetItemsByFiscalYear @accountId = ?, @fiscalYearId = ?",
+	"getAccountsByFiscalYear":    "exec GetAccountsByFiscalYear @fiscalYearId = ?",
+}
+
+var statements map[string]*sql.Stmt
 
 var debug = flag.Bool("debug", false, "enable debugging")
 var password = flag.String("password", "", "the database password")
@@ -56,6 +58,30 @@ func getBudgetItem(rows *sql.Rows, acctId int, fiscalYearId int) (item BudgetIte
 	return
 }
 
+func initializeStatementMap(conn *sql.DB) error {
+	if statements != nil {
+		return nil
+	}
+	statements = make(map[string]*sql.Stmt)
+	for key, value := range storedProcedures {
+		stmt, err := conn.Prepare(value)
+		if err != nil {
+			return err
+		}
+		statements[key] = stmt
+	}
+	return nil
+}
+
+func disposeStatementMap() {
+	if statements == nil {
+		return
+	}
+	for _, value := range statements {
+		value.Close()
+	}
+}
+
 func main() {
 	flag.Parse() // parse the command line args
 
@@ -72,7 +98,7 @@ func main() {
 		*server, *user, *password, *port, *dbname)
 
 	if *debug {
-		fmt.Printf(" connString:%s\n", connString)
+		fmt.Printf("connString:%s\n", connString)
 	}
 	conn, err := sql.Open("mssql", connString)
 	if err != nil {
@@ -80,15 +106,13 @@ func main() {
 	}
 	defer conn.Close()
 
-	stmt, err := conn.Prepare(getBudgetItemsByFiscalYear)
+	err = initializeStatementMap(conn)
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		log.Fatal("error calling GetBudgetItemsByFiscalYear")
+		log.Fatal(err)
 	}
-	// fmt.Print("statement: %+v\n", stmt)
-	defer stmt.Close()
+	defer disposeStatementMap()
 
-	rows, err := stmt.Query(30, 1)
+	rows, err := statements["getBudgetItemsByFiscalYear"].Query(30, 1)
 	if err != nil {
 		fmt.Printf("error: %+v\n", err)
 		log.Fatal("error fetching rows from GetBudgetItemsByFiscalYear")
