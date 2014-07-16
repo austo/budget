@@ -23,6 +23,11 @@ type BudgetItem struct {
 	RemainingBalance float64
 }
 
+// TODO: produce map of statements from map of const strings
+const (
+	getBudgetItemsByFiscalYear = "exec GetBudgetItemsByFiscalYear @accountId = ?, @fiscalYearId = ?"
+)
+
 var debug = flag.Bool("debug", false, "enable debugging")
 var password = flag.String("password", "", "the database password")
 var port *int = flag.Int("port", 1433, "the database port")
@@ -62,7 +67,10 @@ func main() {
 		fmt.Printf(" dbname:%s\n", *dbname)
 	}
 
-	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s", *server, *user, *password, *port, *dbname)
+	connString := fmt.Sprintf(
+		"server=%s;user id=%s;password=%s;port=%d;database=%s",
+		*server, *user, *password, *port, *dbname)
+
 	if *debug {
 		fmt.Printf(" connString:%s\n", connString)
 	}
@@ -72,7 +80,7 @@ func main() {
 	}
 	defer conn.Close()
 
-	stmt, err := conn.Prepare("exec GetBudgetItemsByFiscalYear @accountId = ?, @fiscalYearId = ?")
+	stmt, err := conn.Prepare(getBudgetItemsByFiscalYear)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
 		log.Fatal("error calling GetBudgetItemsByFiscalYear")
@@ -99,7 +107,4 @@ func main() {
 	if err = enc.Encode(&items); err != nil {
 		log.Fatal(err)
 	}
-
-	// fmt.Println(items)
-
 }
