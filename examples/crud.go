@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/austo/budget"
+	"github.com/austo/budget/database"
 	"log"
 	"os"
 )
@@ -35,7 +35,7 @@ func main() {
 		fmt.Printf("connString:%s\n", connString)
 	}
 
-	db := budget.NewDb()
+	db := database.NewDb()
 	err := db.Open(connString)
 	if err != nil {
 		log.Fatal(err)
