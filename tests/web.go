@@ -53,12 +53,14 @@ func main() {
 }
 
 func getAccounts(db *database.Db) func(w http.ResponseWriter, r *http.Request) {
+	// TODO: proper error handling and return codes
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		idStr := params["fiscalYearId"]
 		fiscalYearId, _ := strconv.ParseInt(idStr, 10, 32)
 		enc := json.NewEncoder(w)
 		accounts, _ := db.GetAccounts(int(fiscalYearId))
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		_ = enc.Encode(&accounts)
 	}
 }
