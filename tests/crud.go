@@ -7,6 +7,7 @@ import (
 	"github.com/austo/budget/database"
 	"log"
 	"os"
+	"time"
 )
 
 var debug = flag.Bool("debug", false, "enable debugging")
@@ -51,6 +52,15 @@ func main() {
 	accounts, err := db.GetAccounts(1)
 
 	if err = enc.Encode(&accounts); err != nil {
+		log.Fatal(err)
+	}
+
+	start := time.Date(2014, time.July, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2015, time.June, 30, 0, 0, 0, 0, time.UTC)
+
+	activityItems, err := db.GetActivityReportItems(start, end)
+
+	if err = enc.Encode(&activityItems); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -1,0 +1,479 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+    <title>Redding Garden Club Budget Utility </title>
+    <link rel="stylesheet" href="../Content/Site.css" type="text/css" />
+    <link rel="stylesheet" href="../Content/themes/base/jquery-ui-1.8.20.custom.css"
+        type="text/css" />
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="../Scripts/jquery-ui-1.8.11.min.js"></script>
+    <script type="text/javascript" src="../js/confab.js"></script>
+    <script type="text/javascript" src="../js/manage.js"></script>
+    <style type="text/css">
+        .style2
+        {
+            width: 204px;
+        }
+        .ui-widget-header
+        {
+            color: maroon;
+        }
+    </style>
+</head>
+<body>
+    <form method="post" action="" id="ctl03">
+        <div class="header">
+            <div style="width: 840px;">
+                <table>
+                    <tr>
+                        <td class="style2">
+                            <div>
+                                <img src="/images/rgcCorner.png" alt="GardenClubHeader" />
+                            </div>
+                        </td>
+                        <td style="width: 80%; vertical-align: text-top;">
+                            <table style="width: 85%">
+                                <tr style="height: 30px;">
+                                    <td style="text-align: right">
+                                        <span id="uxUserGreeting" style="color: #DDE4EC;">
+                                            <label id="uxUserGreetingLbl">
+                                            </label>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="title">
+                                            <h1 style="padding-bottom: 0px;">
+                                                <span>Redding Garden Club</span>
+                                            </h1>
+                                            <br />
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="clear hideSkiplink">
+                                            <div class="menu" id="NavigationMenu">
+                                                <span><a href="/main">Budget Item Entry</a></span> <span><a href="/reportselector">Budget
+                                                    Report</a></span> <span><a href="/manage">Manage Accounts</a></span>
+                                            </div>
+                                            <a id="NavigationMenu_SkipLink"></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <script type="text/javascript">
+            ///<reference path="../Scripts/jquery-1.7.2-vsdoc.js"/>
+            ///<reference path="../Scripts/jquery-ui-1.8.20.custom.min.js"/>
+            $(function() {
+                var timeStamp = new Date().getTime();
+
+                //Add Object.create (for IE9 and older browsers) 
+                //and .startsWith() to js string prototype
+                CONFAB.ensureObjectCreate();
+                CONFAB.ensureStringStartsWith();
+
+                //Create PageManager instance
+                var pageManager = new CONFAB.manage.Page();
+
+                pageManager.getFiscalYears();
+                //pageManager.getCurrentUser();
+                pageManager.getUsers();
+                pageManager.confirmDeleteHtml = $('#uxConfirmDeleteInstructionsLbl').html();
+                $('#uxNoSelectionAlert').dialog({ autoOpen: false });
+                $('#uxAjaxAddAccountDiv').dialog({
+                    autoOpen: false,
+                    width: 500,
+                    buttons: {
+                        "Okay": function() {
+                            pageManager.addAcctAjax();
+                            $(this).dialog('close');
+                        },
+                        "Cancel": function() { $(this).dialog('close'); }
+                    }
+                });
+                $('#uxAjaxDeleteAccountDiv').dialog({
+                    autoOpen: false,
+                    width: 400,
+                    buttons: {
+                        "Yes": function() {
+                            $(this).dialog('close');
+                            $('#uxAjaxConfirmDeleteDiv').dialog('open');
+                        },
+                        "No": function() { $(this).dialog('close'); }
+                    }
+                });
+                $('#uxAjaxConfirmDeleteDiv').dialog({
+                    autoOpen: false,
+                    width: 600,
+                    buttons: {
+                        "Move items to selected account": function() {
+                            pageManager.returnNoAcctDivToInitialState();
+                            pageManager.deleteAccountWithMove();
+                            $(this).dialog('close');
+                        },
+                        "Delete without moving": function() {
+                            pageManager.returnNoAcctDivToInitialState();
+                            pageManager.deleteAccountNoMove();
+                            $(this).dialog('close');
+                        },
+                        "Cancel": function() { $(this).dialog('close'); }
+                    }
+                });
+                $('#uxAddUserAjaxDiv').dialog({
+                    autoOpen: false,
+                    width: 600,
+                    buttons: {
+                        "Add user": function() { pageManager.addNewUserAjax(); },
+                        "Cancel": function() {
+                            $(this).dialog('close');
+                            pageManager.wipeNewUserInfo();
+                        }
+                    }
+                });
+                $('#uxEditAccountAjaxDiv').dialog({
+                    autoOpen: false,
+                    width: 800,
+                    buttons: {
+                        "Apply changes": function() {
+                            pageManager.applyAccountEditAjax();
+                            $(this).dialog('close');
+                        },
+                        "Cancel": function() {
+                            $(this).dialog('close');
+                            pageManager.wipeEditAccountInfo();
+                        }
+                    }
+                });
+
+                $('#uxAddAccountCmd').button().click(function() {
+                    $('#uxAjaxAddAccountDiv').dialog('open');
+                });
+                $('#uxDeleteAccountCmd').button().click(function() {
+                    pageManager.findSelectedAccount();
+                });
+                $('#uxPageTabs').tabs();
+                $('#uxPageTabs').bind('tabsshow', function(event, ui) {
+                    if (ui.panel.id == "uxFiscalYearsTab") {
+                        pageManager.initiateFiscalYearsTab();
+                    }
+                });
+
+                $('#uxAddUserCmd').button().click(function() {
+                    $('#uxAddUserAjaxDiv').dialog('open');
+                });
+                $('#uxDeleteUserCmd').button().click(function() {
+                    pageManager.deleteUserAjax();
+                });
+                $('#uxEditAccountCmd').button().click(function() {
+                    pageManager.requestEditAccount(timeStamp);
+                });
+
+                $('#uxAjaxAddAcctIncomeChk').change(function() { pageManager.changeStartingBalanceLbl(this, '#tdBalanceTitle'); });
+            });
+        </script>
+        <div id="uxPageTabs" style="width: 1000px;">
+            <ul>
+                <li><a href="#uxAccountsTab">Manage Accounts</a></li>
+                <li><a href="#uxUsersTab">Manage Users</a></li>
+                <li><a href="#uxFiscalYearsTab">Manage Fiscal Year</a></li>
+            </ul>
+            <div id="uxAccountsTab">
+                <div id="uxAjaxAddAccountDiv" title="Add Account">
+                    <table>
+                        <tr>
+                            <td>
+                                Account Name
+                            </td>
+                            <td style="width: 100px; text-align: center">
+                                Income
+                            </td>
+                            <td id="tdBalanceTitle">
+                                Starting Balance
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input type="text" id="uxAjaxAddAcctNameTxt" />
+                            </td>
+                            <td style="text-align: center">
+                                <input type="checkbox" id="uxAjaxAddAcctIncomeChk" />
+                            </td>
+                            <td>
+                                <input type="text" id="uxAjaxAddAcctStartBalTxt" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">
+                                <br />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="uxNoSelectionAlert" title="Not so fast...">
+                    Please select an account.
+                </div>
+                <div id="uxAjaxDeleteAccountDiv" title="Delete Account">
+                </div>
+                <div id="uxAjaxConfirmDeleteDiv" title="Move or delete account entries">
+                    <label id="uxConfirmDeleteInstructionsLbl">
+                        Move entries to:</label>&nbsp;<select id="uxTargetMoveAccountDropDown" style="width: 300px;">
+                        </select>
+                </div>
+                <div id="uxEditAccountAjaxDiv" title="Edit account">
+                    <table>
+                        <tr>
+                            <td style="width: 200px;">
+                                Account Name: &nbsp;
+                            </td>
+                            <td>
+                                <input type="text" style="width: 150px;" id="uxEditAccountNameTxt" />
+                            </td>
+                            <td>
+                                <span style="width: 40px;"></span>
+                            </td>
+                            <td style="width: 160px;">
+                                Is this an income account? &nbsp;
+                            </td>
+                            <td>
+                                <input type="checkbox" id="uxEditAccountIncomeChk" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Projected Income<br />
+                                (if income account): &nbsp;
+                            </td>
+                            <td>
+                                <input type="text" style="width: 150px;" id="uxEditAccountProjectedIncomeTxt" />
+                            </td>
+                            <td>
+                                <span style="width: 40px;"></span>
+                            </td>
+                            <td style="width: 100px;">
+                                Starting Balance: &nbsp;
+                            </td>
+                            <td>
+                                <input type="text" style="width: 150px;" id="uxEditAccountStartingBalanceTxt" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div id="uxAddUserAjaxDiv" title="Add a new user">
+                    <table>
+                        <tr>
+                            <td style="width: 100px;">
+                                First Name: &nbsp;
+                            </td>
+                            <td>
+                                <input type="text" style="width: 150px;" id="uxNewUserFirstNameTxt" />
+                            </td>
+                            <td>
+                                <span style="width: 40px;"></span>
+                            </td>
+                            <td style="width: 100px;">
+                                Last Name: &nbsp;
+                            </td>
+                            <td>
+                                <input type="text" style="width: 150px;" id="uxNewUserLastNameTxt" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="width: 100px;">
+                                UserName: &nbsp;
+                            </td>
+                            <td>
+                                <input type="text" style="width: 150px;" id="uxNewUserUserNameTxt" />
+                            </td>
+                            <td>
+                                <span style="width: 40px;"></span>
+                            </td>
+                            <td style="width: 100px;">
+                                Password: &nbsp;
+                            </td>
+                            <td>
+                                <input type="text" style="width: 150px;" id="uxNewUserPasswordTxt" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" style="text-align: right">
+                                Should this user be a budget administrator? &nbsp;
+                                <input type="checkbox" id="uxNewUserAdminChk" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <h2>
+                    Active Accounts</h2>
+                <br />
+                <div>
+                    <table>
+                        <tr>
+                            <td style="vertical-align: top">
+                                <select id="uxActiveAccountsListBox" style="width: 275px; height: 500px;" multiple="multiple"
+                                    size="4" />
+                            </td>
+                            <td style="vertical-align: top">
+                                <table style="height: 100%">
+                                    <tr>
+                                        <td colspan="3">
+                                            Click the button to add an account.<br />
+                                            To delete or edit an account, select it from the list and click the appropriate
+                                            button.<br />
+                                            <br />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align: left; width: 120px;">
+                                            <input type="button" id="uxAddAccountCmd" value="Add Account" />
+                                        </td>
+                                        <td style="text-align: center">
+                                            <input type="button" id="uxDeleteAccountCmd" value="Delete Account" />
+                                        </td>
+                                        <td style="text-align: left">
+                                            <input type="button" id="uxEditAccountCmd" value="Edit Account" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div id="uxUsersTab">
+                <h2>
+                    Active Users</h2>
+                <br />
+                <div>
+                    <table>
+                        <tr>
+                            <td style="vertical-align: top">
+                                <select id="uxAjaxUserList" style="width: 150px; height: 200px;" multiple="multiple"
+                                    size="4" />
+                            </td>
+                            <td style="vertical-align: top">
+                                <table style="height: 100%">
+                                    <tr>
+                                        <td colspan="2">
+                                            Click the button to add a user.<br />
+                                            To delete a user, select him or her from the list and click "Delete User".<br />
+                                            <br />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align: left; width: 120px;">
+                                            <input type="button" id="uxAddUserCmd" value="Add User" />
+                                        </td>
+                                        <td style="text-align: left">
+                                            <input type="button" id="uxDeleteUserCmd" value="Delete User" />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div id="uxFiscalYearsTab">
+                <h2>
+                    Add New Fiscal Year
+                </h2>
+                <br />
+                <div id="uxAddFiscalYearDialog" title="Add Fiscal Year">
+                    <table>
+                        <tr>
+                            <td colspan="4">
+                                Select the start and end dates for the new fiscal year
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="4">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Fiscal Year Start
+                            </td>
+                            <td>
+                                Fiscal Year End
+                            </td>
+                            <td id="uxActiveFiscalYearInstructions" style="text-align: center; width: 225px">
+                                Make this the active<br />
+                                fiscal year for new items?
+                            </td>
+                            <td>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input type="text" id="uxFiscalYearStartDate" />
+                            </td>
+                            <td>
+                                <input type="text" id="uxFiscalYearEndDate" />
+                            </td>
+                            <td style="text-align: center">
+                                <input type="checkbox" id="uxActiveFiscalYear" checked="checked" />
+                            </td>
+                            <td>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div title="Edit Fiscal Year" id="uxEditFiscalYearDialog">
+                    <table>
+                        <tr>
+                            <td>
+                                Select the fiscal year to make active:
+                            </td>
+                            <td style="padding-left: 10px;">
+                                <select style="width: 125px" id="uxEditFiscalYearSelect">
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <div title="Close Fiscal Year" id="uxCloseFiscalYearDialog">
+                </div>
+                <table>
+                    <tr>
+                        <td style="vertical-align: top">
+                            <select id="uxFiscalYearList" style="width: 150px; height: 200px;" multiple="multiple"
+                                size="4" />
+                        </td>
+                        <td style="vertical-align: top">
+                            <table style="height: 100%">
+                                <tr>
+                                    <td colspan="3">
+                                        Click the button to add a fiscal year.<br />
+                                        To edit or close a fiscal year, select it from the list and click the appropriate
+                                        button.<br />
+                                        <br />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left; width: 120px;">
+                                        <input type="button" id="uxAddFiscalYearCmd" value="Add Fiscal Year" />
+                                    </td>
+                                    <td style="text-align: center">
+                                        <input type="button" id="uxEditFiscalYearCmd" value="Edit Fiscal Year" />
+                                    </td>
+                                    <td style="text-align: left">
+                                        <input type="button" id="uxCloseFiscalYearCmd" value="Close Fiscal Year" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+  
+    </form>
+</body>
+</html>

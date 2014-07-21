@@ -1,0 +1,249 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Budget Item Entry</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script src="../Scripts/jquery.validate.js"></script>
+    <script src="../Scripts/jquery-ui-1.8.11.min.js"></script>
+    <script src="../Scripts/knockout-2.1.0.js"></script>
+    <script src="../js/koExtensions.js"></script>
+    <script src="../js/confab.js"></script>
+    <script src="../js/main.js"></script>
+    <link rel="stylesheet" type="text/css" href="../Content/themes/base/jquery-ui-1.8.20.custom.css" />
+    <link rel="stylesheet" type="text/css" href="../Content/Site.css" />
+    <!-- <link rel="stylesheet" type="text/css" href="../Content/demo.css" />-->
+    <style type="text/css">
+        .style2
+        {
+            width: 204px;
+        }
+        .ui-widget-header
+        {
+            color: maroon;
+        }
+        div#footer
+        {
+            position: fixed;
+            bottom: 0px;
+            left: 0px;
+            right: 0px;
+            height: 25px;
+            background-color: #eee;
+            text-align: left;
+            padding-left: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <script type="text/javascript">
+        $(function() {
+            CONFAB.ensureObjectCreate();
+            CONFAB.ensureStringStartsWith();
+            var accounts = new CONFAB.AccountModel('#uxAlertDiv');
+
+            $('#uxSaveBtn').button();
+            $('#uxAddBudgetItemBtn').button();
+
+            //Register handler for accounts dropdown to get
+            //budget items for selected account on change
+            $('#uxAccountSelect').change(function() {
+                var selectedAccountId = $(this).val();
+                accounts.getBudgetItems(selectedAccountId);
+            });
+
+            $('#uxFiscalYearSelect').change(function() {
+                if ($(this).val() !== "") {
+                    accounts.selectedFiscalYearId($(this).val());
+                    accounts.getAccounts();
+                }
+            });
+        });
+    </script>
+    <div class="header">
+        <div style="width: 840px;">
+            <table style="border-collapse: collapse; border-spacing: 0;">
+                <tr>
+                    <td class="style2">
+                        <div>
+                            <img src="/images/rgcCorner.png" alt="GardenClubHeader" />
+                        </div>
+                    </td>
+                    <td style="width: 80%; vertical-align: text-top;">
+                        <table style="width: 85%">
+                            <tr style="height: 30px;">
+                                <td style="text-align: right">
+                                    <span id="uxUserGreeting" style="color: #DDE4EC;">
+                                        <label id="uxUserGreetingLbl">
+                                        </label>
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="title">
+                                        <h1 style="padding-bottom: 0px;">
+                                            <span>Redding Garden Club</span>
+                                        </h1>
+                                        <br />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="clear hideSkiplink">
+                                        <div class="menu" id="NavigationMenu">
+                                            <span><a href="/main">Budget Item Entry</a></span> <span><a href="/reportselector">Budget
+                                                Report</a></span> <span><a href="/manage">Manage Accounts</a></span>
+                                        </div>
+                                        <a id="NavigationMenu_SkipLink"></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div id="uxAlertDiv">
+    </div>
+    <div class='liveExample' style="height: 99%">
+        <div>
+            <table style="width: 800px;">
+                <tr>
+                    <td style="text-align: left">
+                        Select a category:
+                    </td>
+                    <td style="text-align: right">
+                        Display fiscal year:
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: left">
+                        <p>
+                            <select style="width: 300px;" id="uxAccountSelect" data-bind='options: accounts, optionsText: "AccountName", optionsValue: "AccountId"'>
+                            </select>
+                        </p>
+                    </td>
+                    <td style="text-align: right">
+                        <select id="uxFiscalYearSelect" data-bind='options: fiscalYears, optionsText: "DisplayName", optionsValue: "FiscalYearId"'>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <form action=''>
+            <table style="width: 300px;">
+                <tr>
+                    <td style="text-align: left">
+                        <span data-bind="text: initialAccountBalance"></span>
+                    </td>
+                    <td style="text-align: right">
+                        <p>
+                            Total entries:&nbsp;<span data-bind='text: budgetItems().length'>&nbsp;</span>
+                        </p>
+                    </td>
+                </tr>
+            </table>
+            <table id="uxBudgetItems" style="border-collapse: collapse; border-spacing: 0">
+                <thead style="background: #4B9E5F; border-color: #4B9E5F;">
+                    <tr style="color: white; font-weight: bold; font-size: 1.2em">
+                        <th style="width: 80px">
+                            Date
+                        </th>
+                        <th style="width: 210px">
+                            Payee/Source
+                        </th>
+                        <th style="width: 300px;">
+                            Description
+                        </th>
+                        <th style="width: 110px">
+                            Expense
+                        </th>
+                        <th style="width: 110px">
+                            Income
+                        </th>
+                        <th style="width: 110px; text-align: right; padding-right: 20px;">
+                            Balance
+                        </th>
+                        <th style="background: maroon">
+                        </th>
+                    </tr>
+                </thead>
+                <tbody data-bind='foreach: budgetItems'>
+                    <tr data-bind='css: { lightBlue: $index() % 2 != 0}'>
+                        <td>
+                            <div style="width: 100%" data-bind="liveEditor: ItemDate">
+                                <span class="view">
+                                    <label class="editLabel" data-bind="click: ItemDate.edit, text: ItemDate() || 'Click to edit value'">
+                                    </label>
+                                </span>
+                                <input class="edit" style="width: 100%" data-bind="datepicker: ItemDate, enterKey: ItemDate.stopEditing,
+                            selectAndFocus: ItemDate.editing, event: { blur: ItemDate.stopEditing }" />
+                            </div>
+                        </td>
+                        <td style="padding-left: 20px;">
+                            <div style="width: 100%" data-bind="liveEditor: Counterparty">
+                                <span class="view">
+                                    <label class="editLabel" data-bind="click: Counterparty.edit, text: Counterparty() || 'Click to edit value'">
+                                    </label>
+                                </span>
+                                <input style="width: 100%" class="edit" data-bind='value: Counterparty, enterKey: Counterparty.stopEditing,
+                            selectAndFocus: Counterparty.editing, event: { blur: Counterparty.stopEditing }' />
+                            </div>
+                        </td>
+                        <td style="padding-left: 20px;">
+                            <div style="width: 100%" data-bind="liveEditor: ItemDescription">
+                                <span class="view">
+                                    <label data-bind="click: ItemDescription.edit, text: ItemDescription() || 'Click to edit value'">
+                                    </label>
+                                </span>
+                                <input style="width: 100%" class="edit" data-bind='value: ItemDescription, enterKey: ItemDescription.stopEditing,
+                            selectAndFocus: ItemDescription.editing, event: { blur: ItemDescription.stopEditing }' />
+                            </div>
+                        </td>
+                        <td style="text-align: right; padding-right: 30px;">
+                            <div style="width: 100%" data-bind="liveEditor: Expense">
+                                <span class="view" style="width: 100%">
+                                    <label style="width: 100%" data-bind="click: Expense.edit, text: Expense().startsWith('$') ? Expense(): '...'">
+                                    </label>
+                                </span>
+                                <input style="text-align: right; width: 96%;" class="edit" data-bind='value: Expense, money: Expense, enterKey: Expense.stopEditing,
+                            selectAndFocus: Expense.editing, event: { blur: Expense.stopEditing }' />
+                            </div>
+                        </td>
+                        <td style="text-align: right; padding-right: 30px;">
+                            <div style="width: 100%" data-bind="liveEditor: Income">
+                                <span class="view" style="width: 100%">
+                                    <label style="width: 100%" data-bind="click: Income.edit, text: Income().startsWith('$') ? Income(): '...'">
+                                    </label>
+                                </span>
+                                <input style="text-align: right; width: 96%;" class="edit" data-bind='value: Income, money: Income, enterKey: Income.stopEditing,
+                            selectAndFocus: Income.editing, event: { blur: Income.stopEditing }' />
+                            </div>
+                        </td>
+                        <td style="text-align: right; padding-right: 20px;">
+                            <span data-bind="text: RemainingBalance, money: RemainingBalance"></span>
+                        </td>
+                        <td>
+                            <input type="button" data-bind='button: "this", click: $root.removeBudgetItem' value="Delete"
+                                style="width: 80px;" class="deleteButton, maroon" onmouseover="$(this).toggleClass('maroon')"
+                                onmouseout="$(this).toggleClass('maroon')" tabindex="-1" />
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="height: 40px">
+            </div>
+            <input id="uxSaveBtn" data-bind='click:saveBudgetItems' value="Save" type="button" />
+            <input id="uxAddBudgetItemBtn" data-bind='click: addBudgetItem' type="button" value="Add Budget Item" />
+            </form>
+        </div>
+    </div>​
+    <div id="footer">
+        <span data-bind="text: saved()"></span>
+    </div>
+</body>
+</html>

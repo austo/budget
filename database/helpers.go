@@ -49,3 +49,25 @@ func getAccount(rows *sql.Rows) (account dto.Account, err error) {
 	}
 	return
 }
+
+func getActivityReportItem(rows *sql.Rows) (item dto.ActivityReportItem, err error) {
+	var itemDate time.Time
+	var accountName string
+	var counterparty string
+	var amount float64
+	var previousBalance float64
+	var remainingBalance float64
+	err = rows.Scan(&itemDate, &accountName, &counterparty, &amount, &previousBalance, &remainingBalance)
+	if err != nil {
+		return
+	}
+	item = dto.ActivityReportItem{
+		ItemDate:         itemDate,
+		AccountName:      accountName,
+		CounterParty:     counterparty,
+		Amount:           amount,
+		PreviousBalance:  previousBalance,
+		RemainingBalance: remainingBalance,
+	}
+	return
+}

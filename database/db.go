@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/austo/budget/dto"
 	_ "github.com/denisenkom/go-mssqldb"
+	"time"
 )
 
 type Db struct {
@@ -61,8 +62,10 @@ func (db *Db) GetBudgetItems(accountId int, fiscalYearId int) (items []dto.Budge
 	items = make([]dto.BudgetItem, 0)
 
 	for rows.Next() {
-		item, _ := getBudgetItem(rows, accountId, fiscalYearId)
-		items = append(items, item)
+		item, rowErr := getBudgetItem(rows, accountId, fiscalYearId)
+		if rowErr == nil {
+			items = append(items, item)
+		}
 	}
 	return
 }
@@ -75,8 +78,26 @@ func (db *Db) GetAccounts(fiscalYearId int) (accounts []dto.Account, err error) 
 	accounts = make([]dto.Account, 0)
 
 	for rows.Next() {
-		account, _ := getAccount(rows)
-		accounts = append(accounts, account)
+		account, rowErr := getAccount(rows)
+		if rowErr == nil {
+			accounts = append(accounts, account)
+		}
+	}
+	return
+}
+
+func (db *Db) GetActivityReportItems(start time.Time, end time.Time) (items []dto.ActivityReportItem, err error) {
+	rows, err := db.statements["getActivityReport"].Query(start, end)
+	if err != nil {
+		return
+	}
+	items = make([]dto.ActivityReportItem, 0)
+
+	for rows.Next() {
+		item, rowErr := getActivityReportItem(rows)
+		if rowErr == nil {
+			items = append(items, item)
+		}
 	}
 	return
 }

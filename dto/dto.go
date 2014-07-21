@@ -23,3 +23,12 @@ type BudgetItem struct {
 	Amount           float64
 	RemainingBalance float64
 }
+
+type ActivityReportItem struct {
+	ItemDate         time.Time
+	AccountName      string
+	CounterParty     string
+	Amount           float64
+	PreviousBalance  float64
+	RemainingBalance float64
+}
