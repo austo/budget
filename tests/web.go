@@ -52,7 +52,7 @@ func main() {
 	http.ListenAndServe("127.0.0.1:3000", nil)
 }
 
-func getAccounts(db *database.Db) func(w http.ResponseWriter, r *http.Request) {
+func getAccounts(db *database.Db) http.HandlerFunc {
 	// TODO: proper error handling and return codes
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
