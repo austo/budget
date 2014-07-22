@@ -18,7 +18,11 @@ var server = flag.String("server", "", "the database server")
 var user = flag.String("user", "", "the database user")
 var dbname = flag.String("dbname", "GardenClubAccounting", "budget database")
 
-const DATE_FMT = "2006-Jan-02"
+const (
+	DATE_FMT      = "2006-Jan-02"
+	BAD_DATA      = "bad data"
+	EBUDGET_ITEMS = "failed to retrieve budget items from database"
+)
 
 func main() {
 	flag.Parse()
@@ -63,23 +67,23 @@ func makeHandlers(db *database.Db) map[string]http.HandlerFunc {
 		rawStart, rawEnd := r.URL.Query().Get("start"), r.URL.Query().Get("end")
 		// TODO: if start/end not present, default to fiscal year start/end
 		if rawStart == "" || rawEnd == "" {
-			http.Error(w, "bad data", http.StatusBadRequest)
+			http.Error(w, BAD_DATA, http.StatusBadRequest)
 			return
 		}
 		start, tErr := time.Parse(DATE_FMT, rawStart)
 		if tErr != nil {
-			http.Error(w, "bad data", http.StatusBadRequest)
+			http.Error(w, BAD_DATA, http.StatusBadRequest)
 			return
 		}
 		end, tErr := time.Parse(DATE_FMT, rawEnd)
 		if tErr != nil {
-			http.Error(w, "bad data", http.StatusBadRequest)
+			http.Error(w, BAD_DATA, http.StatusBadRequest)
 			return
 		}
 		enc := json.NewEncoder(w)
 		actions, dbErr := db.GetActivityReportItems(start, end)
 		if dbErr != nil {
-			http.Error(w, "failed to retrieve budget items from database", http.StatusInternalServerError)
+			http.Error(w, EBUDGET_ITEMS, http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
