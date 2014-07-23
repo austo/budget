@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/austo/budget/database"
+	"github.com/austo/budget/dto"
 	"github.com/gorilla/mux"
+	"html/template"
 	"log"
 	"net/http"
 	"time"
@@ -19,10 +20,12 @@ var user = flag.String("user", "", "the database user")
 var dbname = flag.String("dbname", "GardenClubAccounting", "budget database")
 
 const (
-	DATE_FMT      = "2006-01-02"
+	DATE_FMT      = "2006-Jan-02"
 	BAD_DATA      = "bad data"
 	EBUDGET_ITEMS = "failed to retrieve budget items from database"
 )
+
+var templates = template.Must(template.ParseFiles("../tmpl/activityReport.html"))
 
 func main() {
 	flag.Parse()
@@ -56,6 +59,7 @@ func main() {
 	rtr.HandleFunc("/action", handlers["action"]).Methods("GET")
 	http.Handle("/", rtr)
 
+	fmt.Println(templates)
 	log.Println("Listening...")
 	http.ListenAndServe("127.0.0.1:3000", nil)
 }
@@ -80,14 +84,22 @@ func makeHandlers(db *database.Db) map[string]http.HandlerFunc {
 			http.Error(w, BAD_DATA, http.StatusBadRequest)
 			return
 		}
-		enc := json.NewEncoder(w)
 		actions, dbErr := db.GetActivityReportItems(start, end)
 		if dbErr != nil {
 			http.Error(w, EBUDGET_ITEMS, http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_ = enc.Encode(&actions)
+		activityReport := dto.ActivityReport{
+			Start:           start,
+			End:             end,
+			StartingBalance: actions[0].PreviousBalance,
+			EndingBalance:   actions[len(actions)-1].RemainingBalance,
+			Items:           actions,
+		}
+		tmplErr := templates.ExecuteTemplate(w, "activityReport.html", activityReport)
+		if tmplErr != nil {
+			http.Error(w, tmplErr.Error(), http.StatusInternalServerError)
+		}
 	}
 	return handlers
 }

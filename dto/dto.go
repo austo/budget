@@ -32,3 +32,11 @@ type ActivityReportItem struct {
 	PreviousBalance  float64
 	RemainingBalance float64
 }
+
+type ActivityReport struct {
+	Start           time.Time
+	End             time.Time
+	StartingBalance float64
+	EndingBalance   float64
+	Items           []ActivityReportItem
+}
