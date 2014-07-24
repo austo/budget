@@ -12,11 +12,11 @@ import (
 )
 
 var debug = flag.Bool("debug", false, "enable debugging")
-var password = flag.String("password", "", "the database password")
+var password = flag.String("p", "", "the database password")
 var port *int = flag.Int("port", 1433, "the database port")
-var server = flag.String("server", "", "the database server")
-var user = flag.String("user", "", "the database user")
-var dbname = flag.String("dbname", "GardenClubAccounting", "budget database")
+var server = flag.String("s", "", "the database server")
+var user = flag.String("u", "", "the database user")
+var dbname = flag.String("d", "GardenClubAccounting", "budget database")
 
 const (
 	DATE_FMT      = "2006-01-02"
@@ -32,7 +32,7 @@ func main() {
 		fmt.Printf(" port:%d\n", *port)
 		fmt.Printf(" server:%s\n", *server)
 		fmt.Printf(" user:%s\n", *user)
-		fmt.Printf(" dbname:%s\n", *dbname)
+		fmt.Printf(" database name:%s\n", *dbname)
 	}
 
 	connString := fmt.Sprintf(
@@ -80,14 +80,13 @@ func makeHandlers(db *database.Db) map[string]http.HandlerFunc {
 			http.Error(w, BAD_DATA, http.StatusBadRequest)
 			return
 		}
-		enc := json.NewEncoder(w)
 		actions, dbErr := db.GetActivityReportItems(start, end)
 		if dbErr != nil {
 			http.Error(w, EBUDGET_ITEMS, http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_ = enc.Encode(&actions)
+		_ = json.NewEncoder(w).Encode(&actions)
 	}
 	return handlers
 }
