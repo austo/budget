@@ -44,9 +44,12 @@ func main() {
 	}
 	defer db.Dispose()
 
-	rtr := mux.NewRouter()
-	rtr.HandleFunc("/accounts/{fiscalYearId:\\d+}", getAccounts(db)).Methods("GET")
-	http.Handle("/", rtr)
+	r := mux.NewRouter()
+	r.HandleFunc("/accounts/{fiscalYearId:\\d+}", getAccounts(db)).Methods("GET")
+	// r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("../assets/"))))
+	r.PathPrefix("/{js|css}/").Handler(http.FileServer(http.Dir("../assets/")))
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("../assets/html/")))
+	http.Handle("/", r)
 
 	log.Println("Listening...")
 	http.ListenAndServe("127.0.0.1:3000", nil)
