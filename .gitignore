@@ -2,3 +2,4 @@
 *.log
 out/
 sql/
+config.json

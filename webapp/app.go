@@ -8,25 +8,31 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"strconv"
+	"time"
 )
 
 var debug = flag.Bool("debug", false, "enable debugging")
-var password = flag.String("password", "", "the database password")
+var password = flag.String("p", "", "the database password")
 var port *int = flag.Int("port", 1433, "the database port")
-var server = flag.String("server", "", "the database server")
-var user = flag.String("user", "", "the database user")
-var dbname = flag.String("dbname", "GardenClubAccounting", "budget database")
+var server = flag.String("s", "", "the database server")
+var user = flag.String("u", "", "the database user")
+var dbname = flag.String("d", "GardenClubAccounting", "budget database")
+
+const (
+	DATE_FMT      = "2006-01-02"
+	BAD_DATA      = "bad data"
+	EBUDGET_ITEMS = "failed to retrieve budget items from database"
+)
 
 func main() {
 	flag.Parse()
 
 	if *debug {
-		fmt.Printf(" password:%s\n", *password)
-		fmt.Printf(" port:%d\n", *port)
-		fmt.Printf(" server:%s\n", *server)
-		fmt.Printf(" user:%s\n", *user)
-		fmt.Printf(" dbname:%s\n", *dbname)
+		fmt.Printf("password: %s\n", *password)
+		fmt.Printf("port: %d\n", *port)
+		fmt.Printf("server: %s\n", *server)
+		fmt.Printf("user: %s\n", *user)
+		fmt.Printf("dbname: %s\n", *dbname)
 	}
 
 	connString := fmt.Sprintf(
@@ -44,10 +50,11 @@ func main() {
 	}
 	defer db.Dispose()
 
+	handlers := makeHandlers(db)
+
 	r := mux.NewRouter()
-	r.HandleFunc("/accounts/{fiscalYearId:\\d+}", getAccounts(db)).Methods("GET")
-	// r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("../assets/"))))
-	r.PathPrefix("/{js|css}/").Handler(http.FileServer(http.Dir("../assets/")))
+	r.HandleFunc("/action", handlers["action"]).Methods("GET")
+	r.PathPrefix("/{js|css|img}/").Handler(http.FileServer(http.Dir("../assets/")))
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("../assets/html/")))
 	http.Handle("/", r)
 
@@ -55,15 +62,33 @@ func main() {
 	http.ListenAndServe("127.0.0.1:3000", nil)
 }
 
-func getAccounts(db *database.Db) http.HandlerFunc {
+func makeHandlers(db *database.Db) map[string]http.HandlerFunc {
+	handlers := make(map[string]http.HandlerFunc)
 	// TODO: proper error handling and return codes
-	return func(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
-		idStr := params["fiscalYearId"]
-		fiscalYearId, _ := strconv.ParseInt(idStr, 10, 32)
-		enc := json.NewEncoder(w)
-		accounts, _ := db.GetAccounts(int(fiscalYearId))
+	handlers["action"] = func(w http.ResponseWriter, r *http.Request) {
+		rawStart, rawEnd := r.URL.Query().Get("start"), r.URL.Query().Get("end")
+		// TODO: if start/end not present, default to fiscal year start/end
+		if rawStart == "" || rawEnd == "" {
+			http.Error(w, BAD_DATA, http.StatusBadRequest)
+			return
+		}
+		start, tErr := time.Parse(DATE_FMT, rawStart)
+		if tErr != nil {
+			http.Error(w, BAD_DATA, http.StatusBadRequest)
+			return
+		}
+		end, tErr := time.Parse(DATE_FMT, rawEnd)
+		if tErr != nil {
+			http.Error(w, BAD_DATA, http.StatusBadRequest)
+			return
+		}
+		actions, dbErr := db.GetActivityReportItems(start, end)
+		if dbErr != nil {
+			http.Error(w, EBUDGET_ITEMS, http.StatusInternalServerError)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_ = enc.Encode(&accounts)
+		_ = json.NewEncoder(w).Encode(&actions)
 	}
+	return handlers
 }
