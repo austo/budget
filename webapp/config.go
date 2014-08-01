@@ -20,16 +20,7 @@ type config struct {
 	db   dbconfig
 }
 
-func main() {
-	cfg, err := readConfig("home", "config.json")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(cfg)
-}
-
-func readConfig(env, filename string) (cfg config, err error) {
+func readConfig(filename, env string) (cfg config, err error) {
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return

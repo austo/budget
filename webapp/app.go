@@ -11,12 +11,9 @@ import (
 	"time"
 )
 
-var debug = flag.Bool("debug", false, "enable debugging")
-var password = flag.String("p", "", "the database password")
-var port *int = flag.Int("port", 1433, "the database port")
-var server = flag.String("s", "", "the database server")
-var user = flag.String("u", "", "the database user")
-var dbname = flag.String("d", "GardenClubAccounting", "budget database")
+var debug = flag.Bool("d", false, "enable debugging")
+var env = flag.String("e", "home", "runtime environment")
+var cfgFile = flag.String("f", "config.json", "configuration file")
 
 const (
 	DATE_FMT      = "2006-01-02"
@@ -27,24 +24,23 @@ const (
 func main() {
 	flag.Parse()
 
-	if *debug {
-		fmt.Printf("password: %s\n", *password)
-		fmt.Printf("port: %d\n", *port)
-		fmt.Printf("server: %s\n", *server)
-		fmt.Printf("user: %s\n", *user)
-		fmt.Printf("dbname: %s\n", *dbname)
+	cfg, err := readConfig(*cfgFile, *env)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	connString := fmt.Sprintf(
-		"server=%s;user id=%s;password=%s;port=%d;database=%s",
-		*server, *user, *password, *port, *dbname)
+	if *debug {
+		fmt.Println(cfg)
+	}
+
+	connString := makeConnStr(cfg)
 
 	if *debug {
 		fmt.Printf("connString:%s\n", connString)
 	}
 
 	db := database.NewDb()
-	err := db.Open(connString)
+	err = db.Open(connString)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,8 +54,9 @@ func main() {
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("../assets/html/")))
 	http.Handle("/", r)
 
-	log.Println("Listening...")
-	http.ListenAndServe("127.0.0.1:3000", nil)
+	hostAddr := fmt.Sprintf("127.0.0.1:%s", cfg.port)
+	log.Printf("Listening at %s...\n", hostAddr)
+	http.ListenAndServe(hostAddr, nil)
 }
 
 func makeHandlers(db *database.Db) map[string]http.HandlerFunc {
@@ -91,4 +88,10 @@ func makeHandlers(db *database.Db) map[string]http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(&actions)
 	}
 	return handlers
+}
+
+func makeConnStr(cfg config) string {
+	return fmt.Sprintf(
+		"server=%s;user id=%s;password=%s;port=%s;database=%s",
+		cfg.db.server, cfg.db.user, cfg.db.password, cfg.db.port, cfg.db.database)
 }
