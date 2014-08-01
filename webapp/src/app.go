@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -57,7 +58,9 @@ func main() {
 	http.Handle("/", r)
 
 	hostAddr := fmt.Sprintf("127.0.0.1:%s", cfg.port)
-	log.Printf("Listening at %s...\n", hostAddr)
+	log.Printf("PARENT PROCESS ID: %d\n", os.Getpid())
+	log.Printf("\x1B[1m\x1B[32mListening at http://%s\x1B[39m\x1B[22m\n", hostAddr)
+
 	http.ListenAndServe(hostAddr, nil)
 }
 

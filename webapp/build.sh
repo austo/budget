@@ -3,8 +3,13 @@
 set -o nounset
 set -o errexit
 
-EXENAME='../bin/'$(echo $1 | sed 's/\.go//')
+EXENAME='../bin/app'
+SRCFILES=$(ls src/*.go)
 
-printf "$(tput bold)$(tput setaf 2)Building target: \"%s\"...$(tput sgr0)\n\n" "$EXENAME"
+printf "Building target: $(tput bold)$(tput setaf 2)\"%s\"$(tput sgr0) from:\n" "$EXENAME"
 
-go build -o $EXENAME $@
+for var in $SRCFILES; do
+	printf "  %s\n" "$var"
+done
+
+go build -o $EXENAME $SRCFILES
