@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// TODO: use nested struct and typed unmarshalling
+
 type dbconfig struct {
 	server   string
 	port     string
@@ -18,6 +20,12 @@ type dbconfig struct {
 type config struct {
 	port string
 	db   dbconfig
+}
+
+func (cfg config) dbConnStr() string {
+	return fmt.Sprintf(
+		"server=%s;user id=%s;password=%s;port=%s;database=%s",
+		cfg.db.server, cfg.db.user, cfg.db.password, cfg.db.port, cfg.db.database)
 }
 
 func readConfig(filename, env string) (cfg config, err error) {
